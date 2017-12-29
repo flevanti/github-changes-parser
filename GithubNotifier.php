@@ -6,6 +6,12 @@
  * Time: 14:25
  */
 
+
+/**
+ * Git webhook needs to be configured as json
+ *
+ * Class GithubNotifier
+ */
 class GithubNotifier {
 
   protected $payload;
