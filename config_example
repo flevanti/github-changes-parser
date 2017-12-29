@@ -14,3 +14,5 @@
 ;@secret=1234567890
 -fakefile3
 !/scripts/fakefile3
+-/webhook_endpoint.php
+!webhook_endpoint.php

@@ -221,41 +221,57 @@ class GithubNotifier {
 
     $this->checkRules();
 
+    $this->notify();
+
     return true;
 
+
+  }
+
+  protected function notify() {
+    if (empty($this->filesToNotify)) {
+      return;
+    }
+
+    
 
   }
 
   protected function checkRules() {
 
     $this->e("Check rules");
-    $this->e("----------------------------------------");
 
     //first look for files that need to be notified...
     $this->filesToNotify = [];
     foreach ($this->payloadFiles as $file) {
+      $this->e("----------------------------------------");
       $this->e("Processing file $file");
       foreach ($this->config['RULES'] as $rule) {
+        $rule_found = false;
         if (strpos($file, $rule) !== false) {
+          $rule_found = true;
           $this->e("Rule matched: " . $rule);
           //file matches a rule
-          $exception_found = false;
+          $rule_exception_found = false;
           //let's see if there's an exception
           foreach ($this->config['EXCEPTIONS'] as $rule_exception) {
             if (strpos($file, $rule_exception) !== false) {
-              $this->e("Rule matched exception: " . $rule_exception);
               //file matches an exception
-              $exception_found = true;
+              $rule_exception_found = true;
+              $this->e("Rule matched exception: " . $rule_exception);
               break;
             }
           } //end foreach exception
-          if (!$exception_found) {
+          if (!$rule_exception_found) {
             $this->e("Notification queued");
             $this->filesToNotify[] = $file;
           }
           break;
         } //end if file match rule
       } //end foreach rule
+      if (!$rule_found) {
+        $this->e("No rules matched");
+      }
     } //end foreach file...
 
     $this->e("-------------------------------------------");
