@@ -15,4 +15,5 @@
 -fakefile3
 !/scripts/fakefile3
 -/webhook_endpoint.php
-!webhook_endpoint.php
+;!webhook_endpoint.php
+-config_example
