@@ -115,13 +115,11 @@ class GithubNotifier {
 
     $this->e("--------------------------------");
     $this->e("Configuration loaded");
-
-
+    
     return true;
 
   }
-
-
+  
   protected function checkSecret($payload, $signature) {
     //$payload = json_encode(json_decode($payload, true));
     $this->e("Check secret key");
@@ -131,8 +129,7 @@ class GithubNotifier {
       $this->e($this->lastError);
       return false;
     }
-
-
+    
     // Split signature into algorithm and hash
     list($algo, $hash) = explode('=', $signature, 2);
 
@@ -143,15 +140,14 @@ class GithubNotifier {
     if ($hash !== $payloadHash) {
       $this->lastError = "Secret check failed";
       $this->e($this->lastError);
-      //todo restore the return false before prod.
-      //return false;
+      return false;
     }
     return true;
   }
 
-  protected function loadJsonPayload($payload) {
+  protected function loadPayload($payload) {
     $this->e("Loading payload");
-    $payload = json_decode($payload, true);
+    $payload = json_decode(substr(urldecode($payload), 8), true);
     if (!$payload || json_last_error() != JSON_ERROR_NONE) {
       $this->lastError = "Payload json decode error";
       $this->e($this->lastError);
@@ -191,7 +187,6 @@ class GithubNotifier {
     return true;
   }
 
-
   public function check($payload, $signature, $config) {
     if (!$this->loadConfig($config)) {
       return false;
@@ -201,20 +196,18 @@ class GithubNotifier {
       return false;
     }
 
-    if (!$this->loadJsonPayload($payload)) {
+
+    if (!$this->loadPayload($payload)) {
       return false;
     }
-
-
+    
   }
-
-
+  
   protected function e($txt, $nl = PHP_EOL) {
     if (!$this->verbose) {
       return;
     }
     echo date("H:i:s     ") . $txt . $nl;
   }
-
-
+  
 }
