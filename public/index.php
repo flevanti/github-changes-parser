@@ -35,5 +35,3 @@ if (is_array($result) && count($result)) {
   return;
 }
 
-
-
