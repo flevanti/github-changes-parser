@@ -9,5 +9,5 @@
 include("GithubNotifier.php");
 $obj = new GithubNotifier();
 $conf = file_get_contents("config_example");
-$payload = file_get_contents("payload_example2");
-$result = $obj->check($payload, "sha1=79b574edf629987a1922387c0fe2e82f38b0b702", $conf);
+$payload = trim(file_get_contents("payload_example"));
+$result = $obj->check($payload, "sha1=9d71fc6c158bb29cd18773591644ee1a2fcc0efd", $conf);
