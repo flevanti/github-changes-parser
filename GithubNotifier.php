@@ -10,7 +10,7 @@ class GithubNotifier {
 
   protected $payload;
   protected $payloadFiles;
-  protected $repoId;
+  public $repoId;
   protected $headers;
   protected $secret_ok = false;
   protected $configMaxLen = 10000;
@@ -206,25 +206,36 @@ class GithubNotifier {
     return true;
   }
 
+  /**
+   * @param $payload
+   * @param $signature
+   * @param $config
+   *
+   * @return bool|array
+   */
   public function check($payload, $signature, $config) {
-    if (!$this->loadConfig($config)) {
+    try {
+      if (!$this->loadConfig($config)) {
+        return false;
+      }
+
+      if (!$this->checkSecret($payload, $signature)) {
+        return false;
+      }
+
+      if (!$this->loadPayload($payload)) {
+        return false;
+      }
+
+      $this->checkRules();
+
+
+    } catch (Exception $e) {
+      $this->lastError = $e->getMessage();
       return false;
     }
 
-    if (!$this->checkSecret($payload, $signature)) {
-      return false;
-    }
-
-    if (!$this->loadPayload($payload)) {
-      return false;
-    }
-
-    $this->checkRules();
-
-    $this->notify();
-
-    return true;
-
+    return $this->filesToNotify;
 
   }
 
@@ -232,8 +243,6 @@ class GithubNotifier {
     if (empty($this->filesToNotify)) {
       return;
     }
-
-    
 
   }
 
