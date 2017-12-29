@@ -30,8 +30,7 @@ $payload\n\n\n";
 
 if (is_array($result) && count($result)) {
   $message = "These files in the {$obj->repoId} repository have changed:\n\n" .
-    implode("\n", $result) . "payload:
-$payload\n\n\n";
+    implode("\n", $result) . "\n\n\n";
   mail($mail_to, "Github notifier - " . $obj->repoId, $message);
   return;
 }
