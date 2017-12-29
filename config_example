@@ -11,6 +11,6 @@
 ;this rule is an exception, file name only
 !no_notification_script.php
 ;github secret key
-@secret=yoursecretkey
+@secret=1234567890
 -fakefile3
 !/scripts/fakefile3
