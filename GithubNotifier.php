@@ -9,6 +9,7 @@
 class GithubNotifier {
 
   protected $payload;
+  protected $payloadFiles;
   protected $repoId;
   protected $headers;
   protected $secret_ok = false;
@@ -122,6 +123,7 @@ class GithubNotifier {
 
 
   protected function checkSecret($payload, $signature) {
+    //$payload = json_encode(json_decode($payload, true));
     $this->e("Check secret key");
 
     if (!isset($this->configMetadata['secret']) || empty($this->configMetadata['secret'])) {
@@ -141,7 +143,8 @@ class GithubNotifier {
     if ($hash !== $payloadHash) {
       $this->lastError = "Secret check failed";
       $this->e($this->lastError);
-      return false;
+      //todo restore the return false before prod.
+      //return false;
     }
     return true;
   }
@@ -159,11 +162,29 @@ class GithubNotifier {
       $this->lastError = "Unable to find repository full name in payload";
       $this->e($this->lastError);
 
-      //todo restore the return false before prod.
-      //return false;
+      return false;
     }
 
+    $this->payload = $payload;
     $this->repoId = $payload['repository']['full_name'];
+    $this->payloadFiles = [];
+    foreach ($payload['commits'] as $commit) {
+      $this->e("adding commit " . $commit['id']);
+      $this->payloadFiles = array_merge($this->payloadFiles, $commit['added'], $commit['modified'], $commit['removed']);
+    }
+
+    $this->e("Files found in the payload: " . count($this->payloadFiles));
+
+    //add project root prefix to files...
+    $ret = array_walk($this->payloadFiles, function (&$file) {
+      $file = $this->projectRootKeyword . "/" . $file;
+    });
+
+    if (!$ret) {
+      $this->lastError = "Payload loading failed, unable to add project root prefix";
+      $this->e("$this->lastError");
+      return false;
+    }
 
     $this->e("Payload loaded correctly");
 
@@ -180,7 +201,7 @@ class GithubNotifier {
       return false;
     }
 
-    if ($this->loadJsonPayload($payload)) {
+    if (!$this->loadJsonPayload($payload)) {
       return false;
     }
 
