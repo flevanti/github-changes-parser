@@ -4,6 +4,7 @@
   "description": "",
   "license": "APACHE2",
   "version": "1.0.0",
+  "minimum-stability": "dev",
   "authors": [
     {
       "name": "flevanti",
