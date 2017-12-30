@@ -1,0 +1,10 @@
+{
+    "name": "root/html",
+    "authors": [
+        {
+            "name": "flevanti",
+            "email": "francesco@levanti.net"
+        }
+    ],
+    "require": {}
+}
