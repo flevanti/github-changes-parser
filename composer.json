@@ -2,6 +2,7 @@
   "name": "flevanti/github-changes-parser",
   "type": "library",
   "license": "APACHE2",
+  "version": "0.0.1",
   "authors": [
     {
       "name": "flevanti",
