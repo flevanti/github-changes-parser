@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "flevanti\\githubChangesParser\\": "src\\flevanti\\githubChangesParser"
+      "flevanti\\githubChangesParser\\": "src"
     }
   }
 }
