@@ -1,5 +1,7 @@
 {
   "name": "flevanti/github-changes-parser",
+  "type": "library",
+  "license": "APACHE2",
   "authors": [
     {
       "name": "flevanti",
