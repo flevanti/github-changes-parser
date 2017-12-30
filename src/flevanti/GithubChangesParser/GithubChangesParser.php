@@ -1,18 +1,15 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: francescolevanti
- * Date: 28/12/2017
- * Time: 14:25
- */
 
+namespace flevanti\GithubChangesParser;
+
+use Exception;
 
 /**
  * Git webhook needs to be configured as json
  *
- * Class GithubNotifier
+ * Class GithubChangesParser
  */
-class GithubNotifier {
+class GithubChangesParser {
 
   protected $payload;
   protected $payloadFiles;
