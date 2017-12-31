@@ -17,7 +17,8 @@ class GithubChangesParser {
   protected $headers;
   protected $secret_ok = false;
   protected $configMaxLen = 10000;
-  protected $config = ["NOTIFY" => [], "EXCEPTIONS" => [], 'METADATA' => []];
+  protected $config = ["RULES" => [], "EXCEPTIONS" => [], 'METADATA' => []];
+  protected $configLoaded = false;
   protected $projectRootKeyword = "[PROOT]";
   protected $filesToNotify;
 
@@ -28,10 +29,10 @@ class GithubChangesParser {
     if (is_bool($verbose)) {
       $this->verbose = $verbose;
     }
-    $this->e("WELCOME TO GITHUB NOTIFIER");
+    $this->e("WELCOME TO GITHUB CHANGES PARSER");
   }
 
-  protected function loadConfig($config) {
+  public function loadConfig($config) {
     $this->e("Request to load config");
 
     if (strtolower(substr($config, 0, 4) == "http")) {
@@ -45,6 +46,22 @@ class GithubChangesParser {
       $this->e("Config retrieved from url");
     }
 
+    if (strtolower(substr($config, 0, 8) == "file:///")) {
+      $this->e("Config appears to be a local file");
+      if (!file_exists($config)) {
+        $this->lastError = "Config file not found";
+        $this->e($this->lastError);
+        return false;
+      }
+      $config = file_get_contents($config, false, null, 0, $this->configMaxLen + 500);
+      if (!$config) {
+        $this->lastError = "Unable to read config file";
+        $this->e($this->lastError);
+        return false;
+      }
+      $this->e("Config retrieved from file");
+    }
+
     if (strlen($config) > $this->configMaxLen) {
       $this->lastError = "Config file too big, max allowed size is " . $this->configMaxLen;
       $this->e($this->lastError);
@@ -54,6 +71,9 @@ class GithubChangesParser {
     $config = explode("\n", $config);
 
     $this->e("Config file is " . count($config) . " lines");
+
+    $metadata_sent = false;
+    $rule_processing = "";
 
     foreach ($config as $line_num => $line) {
       $this->e("-------------------------------------------------");
@@ -66,32 +86,44 @@ class GithubChangesParser {
       $first_char = substr($line, 0, 1);
       $this->e("Line identifier: [$first_char]");
       $line = trim(substr($line, 1));
-      if (empty($line)) {
-        $this->e("Line is empty after the line identifier, skipped");
-        continue;
-      }
       //line commented
       if ($first_char == ";" || $first_char == "#") {
         $this->e("Line is commented, skipped");
         continue;
       }
+      if (empty($line)) {
+        $this->lastError = "Line is empty after the line identifier";
+        $this->e($this->lastError);
+        return false;
+      }
       //config metadata
       if ($first_char == "@") {
         $this->e("Line is metadata");
+        if ($metadata_sent) {
+          $this->lastError = "Metadata already parsed, too late!";
+          $this->e($this->lastError);
+          return false;
+        }
         $line = explode("=", $line, 2);
         if (count($line) != 2) {
-          $this->e("Metadata line parsing error, skipped");
-          continue;
+          $this->lastError = "Metadata line parsing error";
+          $this->e($this->lastError);
+          return false;
         }
         $line[0] = trim($line[0]);
         $line[1] = trim($line[1]);
         if (empty($line[0])) {
-          $this->e("Metadata line missing key, skipped");
-          continue;
+          $this->lastError = "Metadata line missing key";
+          $this->e($this->lastError);
+          return false;
         }
         $this->config['METADATA'][trim($line[0])] = trim($line[1]);
         continue;
       }
+      // if we are here, line is not a metadata
+      // so we consider the metadata section over
+      $metadata_sent = true;
+
       //actual rule
       if ($first_char == "-") {
         if (substr($line, 0, 1) == "/") {
@@ -99,6 +131,7 @@ class GithubChangesParser {
         }
         $this->config['RULES'][] = $line;
         $this->e("RULE: " . $line);
+        $rule_processing = $line;
         continue;
       }
       //exception
@@ -106,13 +139,23 @@ class GithubChangesParser {
         if (substr($line, 0, 1) == "/") {
           $line = $this->projectRootKeyword . $line;
         }
+        if (!empty($rule_processing)) {
+          if (strpos($line, $rule_processing) !== 0) {
+            $this->lastError = "Rule exception does not belong to previously imported rule: " . $line;
+            $this->e($this->lastError);
+            return false;
+          }
+        }
+
         $this->config['EXCEPTIONS'][] = $line;
         $this->e("RULE EXCEPTION: " . $line);
         continue;
       }
 
       //ooops your line has been ignored.....
-      $this->e("Line has been ignored....");
+      $this->lastError = "Unable to parse line";
+      $this->e($this->lastError);
+      return false;
 
     } //end foreach line in config file
 
@@ -126,17 +169,24 @@ class GithubChangesParser {
     $this->e("Metadata: " . count($this->config['METADATA']));
     $this->e("--------------------------------");
 
+    $this->configLoaded = true;
     return true;
 
   }
 
   protected function checkSecret($payload, $signature) {
-    //$payload = json_encode(json_decode($payload, true));
     $this->e("Check secret key");
 
     if (!isset($this->config['METADATA']['secret']) || empty($this->config['METADATA']['secret'])) {
       $this->e("Secret key not found in config file, check skipped");
       return true;
+    }
+
+    if (empty($signature)) {
+      $this->lastError = "Signature is empty!";
+      $this->e($this->lastError);
+      $this->e("If you don't want to check signature or it is not provided, remove it from the config");
+      return false;
     }
 
     if (!function_exists("hash_algos")) {
@@ -216,9 +266,11 @@ class GithubChangesParser {
    *
    * @return bool|array
    */
-  public function check($payload, $signature, $config) {
+  public function check($payload, $signature) {
     try {
-      if (!$this->loadConfig($config)) {
+      if (!$this->configLoaded) {
+        $this->lastError = "Configuration not loaded";
+        $this->e($this->lastError);
         return false;
       }
 
@@ -232,21 +284,11 @@ class GithubChangesParser {
 
       $this->checkRules();
 
-
     } catch (Exception $e) {
       $this->lastError = $e->getMessage();
       return false;
     }
-
     return $this->filesToNotify;
-
-  }
-
-  protected function notify() {
-    if (empty($this->filesToNotify)) {
-      return;
-    }
-
   }
 
   protected function checkRules() {
@@ -291,12 +333,15 @@ class GithubChangesParser {
 
   }
 
-
   protected function e($txt, $nl = PHP_EOL) {
     if (!$this->verbose) {
       return;
     }
     echo date("H:i:s     ") . $txt . $nl;
+  }
+
+  public function getMetadataValue($key, $default = null) {
+    return isset($this->config['METADATA'][$key]) ? $this->config['METADATA'][$key] : $default;
   }
 
 }

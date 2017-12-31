@@ -1,0 +1,30 @@
+; this is a comment
+# this is a comment
+; the next line is a metadata line (used to pass variables)
+@email=example@domain.com
+@secret=yoursecretkey
+!no_notification_script.php
+!webhook_endpoint.php
+; this rule (-) will notify if scripts folder located in the project root folder is changed
+-/scripts
+; this rule is an exceptions, path and folder specified - no notification
+!/scripts/no_notification_script.php
+!/scripts/fakefile3
+; this rule (-) will notify if any scripts folder is changed
+-scripts
+; this rule is an exception, file name only
+; github secret key
+-fakefile3
+-/webhook_endpoint.php
+-config_example
+-/index.php
+-/public
+-fakesettings
+;
+;
+;
+;
+; METADATA NEEDS TO BE PARSED ALL TOGETHER BEFORE RULES OR EXCEPTIONS
+; A RULE AND ITS EXCEPTIONS NEED TO BE GROUPED TOGETHER (NO OTHER RULES OR EXCEPTIONS IN THE MIDDLE)
+; DISABLE THE SECRET METADATA TO DISABLE THE CHECK
+; ADD AS MANY METADATA LINES AS YOU WANT, THEY CAN BE USED/RETRIEVED LATER
