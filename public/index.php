@@ -41,8 +41,13 @@ if ($ret === false) {
 
 if (!empty($ret)) {
   echo "Some files have changed and we need to notify someone\n";
-  echo "This is the list of the files:\n";
-  echo implode("\n", $ret);
+  echo "This is the list of changed files:\n";
+  echo implode("\n", $ret['files_list']);
+  echo "--------\n";
+  echo "These is the same list with the matched rule:\n";
+  foreach ($ret['files_rules'] as $file) {
+    echo $file['file'] . " --> " . $file['rule'] . "\n";
+  }
 }
 
 echo "\n\nBye bye\n\n";

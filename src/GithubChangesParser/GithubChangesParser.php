@@ -318,7 +318,11 @@ class GithubChangesParser {
           } //end foreach exception
           if (!$rule_exception_found) {
             $this->e("Notification queued");
-            $this->filesToNotify[] = $file;
+            $this->filesToNotify['files_list'][] = $file;
+            $this->filesToNotify['files_rules'][] = [
+              'file' => $file,
+              'rule' => $rule,
+            ];
           }
           break;
         } //end if file match rule
